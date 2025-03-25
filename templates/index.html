@@ -1,120 +1,257 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Árbol de Decisión</title>
+    <title>Árbol de Decisión</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2f4f4f;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        #controls {
             margin: 20px;
             padding: 20px;
-            background-color: #f4f4f4;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
         }
-        h1 {
-            text-align: center;
-            color: #333;
+
+        #controls:hover {
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
         }
-        form {
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
+
         label {
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 8px;
             display: block;
-            margin-top: 10px;
-            font-weight: bold;
         }
-        input {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+
+        input, button {
+            padding: 12px;
+            margin: 10px;
+            font-size: 1.1em;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            transition: border-color 0.3s, background-color 0.3s;
+            width: 200px;
+            display: inline-block;
         }
+
+        input:focus, button:hover {
+            border-color: #007bff;
+            background-color: #e6f7ff;
+        }
+
         button {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin-top: 15px;
-            background: #007bff;
+            background-color: #007bff;
             color: white;
-            border: none;
-            border-radius: 4px;
             cursor: pointer;
         }
-        button:hover {
-            background: #0056b3;
+
+        button:active {
+            background-color: #0056b3;
         }
-        #error {
-            color: red;
-            text-align: center;
-            margin-top: 10px;
+
+        #tree-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
         }
-        #treeGraph, #treeSummary {
+
+        #info {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            text-align: left;
             margin: 20px auto;
-            max-width: 600px;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #info p {
+            margin: 5px 0;
+        }
+
+        .info-header {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .input-section {
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .input-section input {
+            width: 250px;
+        }
+
+        .input-section label {
+            margin-right: 10px;
         }
     </style>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
 <body>
-    <h1>Generador de Árbol de Decisión</h1>
-    <form id="treeForm">
-        <label for="nodesInput">Ingrese los nodos (Ejemplo: A,B,C)</label>
-        <input type="text" id="nodesInput" placeholder="Nodos separados por comas">
+    <h1>Árbol de Decisión</h1>
+    
+    <div id="controls">
+        <div class="input-section">
+            <label for="totalNodes">Número total de nodos:</label>
+            <input type="text" id="totalNodes" placeholder="Ej. 10">
+        </div>
+        <div class="input-section">
+            <label for="rootNode">Nodo raíz:</label>
+            <input type="text" id="rootNode" placeholder="Ej. A">
+        </div>
+        <div class="input-section">
+            <label for="goalNode">Nodo meta:</label>
+            <input type="text" id="goalNode" placeholder="Ej. Z">
+        </div>
+        <div class="input-section">
+            <label for="numParents">Número de nodos padres:</label>
+            <input type="text" id="numParents" placeholder="Ej. 3">
+        </div>
+        <div class="input-section">
+            <label for="numChildren">Número de nodos hijos:</label>
+            <input type="text" id="numChildren" placeholder="Ej. 2">
+        </div>
+        <div class="input-section">
+            <label for="branches">Número de ramas:</label>
+            <input type="text" id="branches" placeholder="Ej. 5">
+        </div>
+        <div class="input-section">
+            <label for="amplitude">Amplitud del árbol:</label>
+            <input type="text" id="amplitude" placeholder="Ej. 3">
+        </div>
+        <div class="input-section">
+            <label for="depth">Profundidad del árbol:</label>
+            <input type="text" id="depth" placeholder="Ej. 4">
+        </div>
+        <button onclick="generateTree()">Generar Árbol</button>
+    </div>
 
-        <label for="edgesInput">Ingrese las relaciones (Ejemplo: A->B, B->C)</label>
-        <input type="text" id="edgesInput" placeholder="Relaciones de nodos">
-
-        <button type="submit">Generar Árbol</button>
-    </form>
-
-    <div id="error"></div>
-    <div id="treeGraph"></div>
-    <div id="treeSummary"></div>
+    <div id="info"></div>
+    <div id="tree-container"></div>
 
     <script>
-        document.getElementById("treeForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            const nodesInput = document.getElementById("nodesInput").value.trim();
-            const edgesInput = document.getElementById("edgesInput").value.trim();
-            const errorDiv = document.getElementById("error");
-            const treeGraph = document.getElementById("treeGraph");
-            const treeSummary = document.getElementById("treeSummary");
+        function generateTree() {
+            // Obtener los valores de los inputs
+            const totalNodes = document.getElementById("totalNodes").value;
+            const rootNode = document.getElementById("rootNode").value;
+            const goalNode = document.getElementById("goalNode").value;
+            const numParents = document.getElementById("numParents").value;
+            const numChildren = document.getElementById("numChildren").value;
+            const branches = document.getElementById("branches").value;
+            const amplitude = document.getElementById("amplitude").value;
+            const depth = document.getElementById("depth").value;
 
-            errorDiv.innerHTML = "";
-            treeGraph.innerHTML = "";
-            treeSummary.innerHTML = "";
-
-            if (!nodesInput || !edgesInput) {
-                errorDiv.innerHTML = "Error: Debes ingresar los nodos y las relaciones.";
+            // Validar que todos los campos no estén vacíos
+            if (!totalNodes || !rootNode || !goalNode || !numParents || !numChildren || !branches || !amplitude || !depth) {
+                alert("Por favor, completa todos los campos.");
                 return;
             }
 
-            const nodes = nodesInput.split(",");
-            const edges = edgesInput.split(",").map(edge => edge.trim().split("->"));
+            // Validar que los campos con números contengan solo valores numéricos
+            const numericFields = [totalNodes, numParents, numChildren, branches, amplitude, depth];
+            if (numericFields.some(field => isNaN(field))) {
+                alert("Por favor, ingresa solo valores numéricos en los campos correspondientes.");
+                return;
+            }
 
-            let summary = `<h2>Resumen del Árbol</h2>`;
-            summary += `<p><strong>Número de nodos:</strong> ${nodes.length}</p>`;
-            summary += `<p><strong>Número de relaciones:</strong> ${edges.length}</p>`;
+            // Mostrar los datos ingresados
+            document.getElementById("info").innerHTML = `
+                <p><span class="info-header">Número total de nodos:</span> ${totalNodes}</p>
+                <p><span class="info-header">Nodo raíz:</span> ${rootNode}</p>
+                <p><span class="info-header">Nodo meta:</span> ${goalNode}</p>
+                <p><span class="info-header">Número de nodos padres:</span> ${numParents}</p>
+                <p><span class="info-header">Número de nodos hijos:</span> ${numChildren}</p>
+                <p><span class="info-header">Número de ramas:</span> ${branches}</p>
+                <p><span class="info-header">Amplitud del árbol:</span> ${amplitude}</p>
+                <p><span class="info-header">Profundidad del árbol:</span> ${depth}</p>
+            `;
 
-            let graphHTML = "<h2>Árbol de Decisión</h2><ul>";
-            nodes.forEach(node => {
-                graphHTML += `<li>${node}</li>`;
-            });
-            graphHTML += "</ul>";
+            // Crear un objeto con los datos para dibujar el árbol
+            const treeData = {
+                nodes: Array.from({ length: totalNodes }, (_, i) => ({
+                    id: i,
+                    label: String.fromCharCode(65 + i) // Genera letras A, B, C... para los nodos
+                }))
+            };
 
-            treeGraph.innerHTML = graphHTML;
-            treeSummary.innerHTML = summary;
-        });
+            drawTree(treeData);
+        }
+
+        function drawTree(treeData) {
+            d3.select("#tree-container").select("svg").remove();
+
+            const width = 800, height = 500;
+            const svg = d3.select("#tree-container")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", "translate(40,40)");
+
+            const root = d3.stratify()
+                .id(d => d.id)
+                .parentId(d => (d.id === 0 ? null : Math.floor((d.id - 1) / 2)))
+                (treeData.nodes);
+
+            const treeLayout = d3.tree().size([width - 100, height - 100]);
+            treeLayout(root);
+
+            // Dibujar líneas entre nodos
+            svg.selectAll("line")
+                .data(root.links())
+                .enter()
+                .append("line")
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y)
+                .attr("stroke", "black");
+
+            // Dibujar nodos
+            svg.selectAll("circle")
+                .data(root.descendants())
+                .enter()
+                .append("circle")
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("r", 20)
+                .attr("stroke", "black")
+                .attr("fill", "white");
+
+            // Etiquetas de los nodos (Letras aleatorias)
+            svg.selectAll("text")
+                .data(root.descendants())
+                .enter()
+                .append("text")
+                .attr("x", d => d.x)
+                .attr("y", d => d.y + 5)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .text(d => d.data.label);
+        }
     </script>
 </body>
 </html>

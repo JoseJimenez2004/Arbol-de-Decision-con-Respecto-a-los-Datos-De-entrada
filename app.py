@@ -1,105 +1,65 @@
-from flask import Flask, jsonify, request, render_template
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+import networkx as nx
+import random
+import string
 
-app = Flask(__name__)
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
-# Función para generar el árbol de decisión
-def generate_tree(nodes, edges):
-    tree = {node: [] for node in nodes}
+def generate_label(index):
+    """Genera etiquetas con un patrón que va desde A-Z, luego AA, AB, etc."""
+    result = []
+    while index >= 0:
+        result.append(chr(index % 26 + 65))  # A-Z son 65-90 en ASCII
+        index = index // 26 - 1
+    return ''.join(reversed(result))
+
+def generate_tree(total_nodes, labels=None):
+    """Genera un árbol binario con etiquetas personalizadas o generadas automáticamente"""
+    G = nx.DiGraph()
+    labels_dict = {}
+
+    # Si no se proporcionan etiquetas, genera etiquetas con el patrón especificado
+    if labels is None:
+        labels = {i: generate_label(i) for i in range(total_nodes)}
+
+    for i in range(total_nodes):
+        labels_dict[i] = labels[i]
+        G.add_node(i, label=labels_dict[i])
+
+    for i in range(1, total_nodes):
+        parent = (i - 1) // 2
+        G.add_edge(parent, i)
+
+    return G, labels_dict
+
+@app.get("/")
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/generate_tree")
+async def get_tree_data(total_nodes: int = 10, labels: str = None):
+    # Si se pasa una lista de etiquetas, la convierte en una lista de etiquetas
+    if labels:
+        labels = labels.split(",")  # Espera una cadena separada por comas para los labels
+        if len(labels) != total_nodes:
+            return {"error": "El número de etiquetas no coincide con el número total de nodos"}
     
-    for edge in edges:
-        parent, child = edge.split('->')
-        parent, child = parent.strip(), child.strip()
-        if parent in tree and child in tree:
-            tree[parent].append(child)
-        else:
-            return None  # Error si la relación no es válida
+    # Genera el árbol con las etiquetas proporcionadas o aleatorias
+    tree, labels_dict = generate_tree(total_nodes, labels)
 
-    return tree
-
-# Función para calcular la profundidad
-def calculate_depth(tree, node):
-    if node not in tree or not tree[node]:
-        return 1
-    depths = [calculate_depth(tree, child) for child in tree[node]]
-    return max(depths) + 1
-
-# Función para calcular la amplitud
-def calculate_width(tree, node):
-    return len(tree[node]) if node in tree else 0
-
-# Algoritmo de búsqueda por profundidad
-def depth_first_search(tree, start_node):
-    result = []
-    visited = set()
-
-    def dfs(node):
-        if node in visited:
-            return
-        visited.add(node)
-        result.append(node)
-        for child in tree[node]:
-            dfs(child)
-
-    dfs(start_node)
-    return result
-
-# Algoritmo de búsqueda por amplitud
-def breadth_first_search(tree, start_node):
-    result = []
-    queue = [start_node]
-    visited = set()
-
-    while queue:
-        node = queue.pop(0)
-        if node in visited:
-            continue
-        visited.add(node)
-        result.append(node)
-        queue.extend(tree[node])
-
-    return result
-
-# Ruta principal para mostrar la interfaz
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-# API para generar el árbol y devolver el resumen
-@app.route('/generate_tree', methods=['POST'])
-def generate_and_get_summary():
-    data = request.json
-    nodes = data.get('nodes', [])
-    edges = data.get('edges', [])
-
-    if not nodes or not edges:
-        return jsonify({'error': 'Debe proporcionar nodos y relaciones válidas'}), 400
-
-    tree = generate_tree(nodes, edges)
-    if tree is None:
-        return jsonify({'error': 'Las relaciones no son válidas'}), 400
-
-    # Resumen del árbol
-    root_node = nodes[0]
-    depth = calculate_depth(tree, root_node)
-    width = calculate_width(tree, root_node)
-    num_nodes = len(tree)
-    num_edges = sum(len(children) for children in tree.values())
-
-    # Algoritmos de búsqueda
-    depth_first = depth_first_search(tree, root_node)
-    breadth_first = breadth_first_search(tree, root_node)
-
-    summary = {
-        'root_node': root_node,
-        'depth': depth,
-        'width': width,
-        'num_nodes': num_nodes,
-        'num_edges': num_edges,
-        'depth_first': depth_first,
-        'breadth_first': breadth_first
+    tree_data = {
+        "nodes": [{"id": node, "label": labels_dict[node]} for node in tree.nodes],
+        "links": [{"source": u, "target": v} for u, v in tree.edges],
+        "total_nodes": total_nodes,
+        "root": 0,
+        "goal_node": total_nodes - 1,
+        "num_parents": len([n for n in tree.nodes if tree.in_degree(n) > 0]),
+        "num_children": len([n for n in tree.nodes if tree.out_degree(n) > 0]),
+        "branches": len(tree.edges),
+        "amplitude": max(tree.out_degree(n) for n in tree.nodes),
+        "depth": nx.dag_longest_path_length(tree)
     }
 
-    return jsonify(summary)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return tree_data
