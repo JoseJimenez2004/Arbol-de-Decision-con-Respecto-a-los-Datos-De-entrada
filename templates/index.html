@@ -47,6 +47,26 @@
         </div>
         <button onclick="generateTree()">Generar Árbol</button>
         <br>
+        <!-- Ventana emergente -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Búsqueda en Profundidad</h2>
+        <p id="searchResultText"></p>
+        <div id="searchAnimation"></div>
+    </div>
+</div>
+<!-- Ventana emergente -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Búsqueda de Nodo</h2>
+        <p id="searchResultText"></p>
+        <div id="searchAnimation"></div>
+    </div>
+</div>
+
+
         <button onclick="depthSearch()">Búsqueda por Profundidad</button>
         <button onclick="breadthSearch()">Búsqueda por Amplitud</button>
         <button onclick="showSummary()">Resumen</button>

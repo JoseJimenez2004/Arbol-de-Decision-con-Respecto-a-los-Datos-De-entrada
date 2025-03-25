@@ -181,3 +181,113 @@ function showSummary() {
         alert("No se ha realizado ninguna búsqueda aún.");
     }
 }
+
+function depthSearch() {
+    const goalNode = document.getElementById("goalNode").value;
+    if (!goalNode) {
+        alert("Por favor, ingresa un nodo meta para la búsqueda.");
+        return;
+    }
+
+    const visited = new Set();
+    const stack = [0]; // Empezamos desde el nodo raíz (índice 0)
+    let found = false;
+    let path = [];
+
+    while (stack.length > 0) {
+        const current = stack.pop();
+        if (visited.has(current)) continue;
+
+        visited.add(current);
+        path.push(treeData.nodes[current].label);
+
+        if (treeData.nodes[current].label === goalNode) {
+            found = true;
+            break;
+        }
+
+        treeData.nodes[current].children.forEach(childId => stack.push(childId));
+    }
+
+    if (found) {
+        showModal(path); // Llamamos a la función para mostrar la ventana emergente
+    } else {
+        alert("Nodo no encontrado.");
+    }
+}
+
+// Función para mostrar la ventana emergente con animación
+function showModal(path) {
+    const modal = document.getElementById("searchModal");
+    const resultText = document.getElementById("searchResultText");
+    const animationDiv = document.getElementById("searchAnimation");
+
+    resultText.innerHTML = "Camino encontrado:";
+    animationDiv.innerHTML = "";
+
+    modal.style.display = "block";
+
+    // Animación de nodos visitados con un retraso
+    path.forEach((node, index) => {
+        setTimeout(() => {
+            animationDiv.innerHTML += `<span style="color: blue; font-size: 22px; font-weight: bold;">${node} </span>`;
+        }, index * 500); // Retraso de 500ms entre cada nodo
+    });
+}
+
+// Cierra la ventana emergente
+function closeModal() {
+    document.getElementById("searchModal").style.display = "none";
+}
+function breadthSearch() {
+    const goalNode = document.getElementById("goalNode").value;
+    if (!goalNode) {
+        alert("Por favor, ingresa un nodo meta para la búsqueda.");
+        return;
+    }
+
+    const visited = new Set();
+    const queue = [0]; // Empezamos desde el nodo raíz (índice 0)
+    let found = false;
+    let path = [];
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (visited.has(current)) continue;
+
+        visited.add(current);
+        path.push(treeData.nodes[current].label);
+
+        if (treeData.nodes[current].label === goalNode) {
+            found = true;
+            break;
+        }
+
+        treeData.nodes[current].children.forEach(childId => queue.push(childId));
+    }
+
+    if (found) {
+        showBreadthModal(path); // Llamamos a la función para mostrar la ventana emergente
+    } else {
+        alert("Nodo no encontrado.");
+    }
+}
+
+// Función para mostrar la ventana emergente con animación para la búsqueda por amplitud
+function showBreadthModal(path) {
+    const modal = document.getElementById("searchModal");
+    const resultText = document.getElementById("searchResultText");
+    const animationDiv = document.getElementById("searchAnimation");
+
+    resultText.innerHTML = "Camino encontrado en Búsqueda por Amplitud:";
+    animationDiv.innerHTML = "";
+
+    modal.style.display = "block";
+
+    // Animación de nodos visitados con un retraso
+    path.forEach((node, index) => {
+        setTimeout(() => {
+            animationDiv.innerHTML += `<span style="color: green; font-size: 22px; font-weight: bold;">${node} </span>`;
+        }, index * 500); // Retraso de 500ms entre cada nodo
+    });
+}

@@ -100,3 +100,47 @@ button:active {
 .input-section label {
     margin-right: 10px;
 }
+
+/* Estilos para la ventana modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Contenido de la ventana */
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    width: 50%;
+    text-align: center;
+    border-radius: 10px;
+    animation: fadeIn 0.5s;
+}
+
+/* Animación de entrada */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Botón de cerrar */
+.close {
+    color: red;
+    font-size: 30px;
+    float: right;
+    cursor: pointer;
+}
+
+/* Estilo para el resultado animado */
+#searchAnimation {
+    margin-top: 10px;
+    font-size: 20px;
+    font-weight: bold;
+}
