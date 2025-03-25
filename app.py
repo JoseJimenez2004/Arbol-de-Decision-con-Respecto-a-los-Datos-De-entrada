@@ -1,10 +1,14 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 import networkx as nx
-import random
-import string
 
 app = FastAPI()
+
+# Servir archivos estáticos desde la carpeta "static"
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Configuración de Jinja2 para renderizar HTML desde "templates"
 templates = Jinja2Templates(directory="templates")
 
 def generate_label(index):
@@ -20,7 +24,6 @@ def generate_tree(total_nodes, labels=None):
     G = nx.DiGraph()
     labels_dict = {}
 
-    # Si no se proporcionan etiquetas, genera etiquetas con el patrón especificado
     if labels is None:
         labels = {i: generate_label(i) for i in range(total_nodes)}
 
@@ -40,13 +43,11 @@ async def index(request: Request):
 
 @app.get("/generate_tree")
 async def get_tree_data(total_nodes: int = 10, labels: str = None):
-    # Si se pasa una lista de etiquetas, la convierte en una lista de etiquetas
     if labels:
-        labels = labels.split(",")  # Espera una cadena separada por comas para los labels
+        labels = labels.split(",")
         if len(labels) != total_nodes:
             return {"error": "El número de etiquetas no coincide con el número total de nodos"}
     
-    # Genera el árbol con las etiquetas proporcionadas o aleatorias
     tree, labels_dict = generate_tree(total_nodes, labels)
 
     tree_data = {

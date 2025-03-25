@@ -1,22 +1,49 @@
+
+let treeData = {};  // Para almacenar los datos del árbol generado
+let searchResult = {}; // Para almacenar los resultados de la búsqueda
+
 function generateTree() {
+    // Obtener los valores de los inputs
     const totalNodes = document.getElementById("totalNodes").value;
+    const rootNode = document.getElementById("rootNode").value;
+    const goalNode = document.getElementById("goalNode").value;
+    const numParents = document.getElementById("numParents").value;
+    const numChildren = document.getElementById("numChildren").value;
+    const branches = document.getElementById("branches").value;
+    const amplitude = document.getElementById("amplitude").value;
+    const depth = document.getElementById("depth").value;
 
-    fetch(`/generate_tree?total_nodes=${totalNodes}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("info").innerHTML = `
-                <p><strong>Número total de nodos:</strong> ${data.total_nodes}</p>
-                <p><strong>Nodo raíz:</strong> ${data.root}</p>
-                <p><strong>Nodo meta:</strong> ${data.goal_node}</p>
-                <p><strong>Número de nodos padres:</strong> ${data.num_parents}</p>
-                <p><strong>Número de nodos hijos:</strong> ${data.num_children}</p>
-                <p><strong>Número de ramas:</strong> ${data.branches}</p>
-                <p><strong>Amplitud del árbol:</strong> ${data.amplitude}</p>
-                <p><strong>Profundidad del árbol:</strong> ${data.depth}</p>
-            `;
+    // Validar que todos los campos no estén vacíos
+    if (!totalNodes || !rootNode || !goalNode || !numParents || !numChildren || !branches || !amplitude || !depth) {
+        alert("Por favor, completa todos los campos.");
+        return;
+    }
 
-            drawTree(data);
-        });
+    // Validar que los campos con números contengan solo valores numéricos
+    const numericFields = [totalNodes, numParents, numChildren, branches, amplitude, depth];
+    if (numericFields.some(field => isNaN(field))) {
+        alert("Por favor, ingresa solo valores numéricos en los campos correspondientes.");
+        return;
+    }
+
+    // Crear un objeto con los datos para dibujar el árbol
+    treeData = {
+        nodes: Array.from({ length: totalNodes }, (_, i) => ({
+            id: i,
+            label: String.fromCharCode(65 + i), // Genera letras A, B, C... para los nodos
+            parent: i === 0 ? null : Math.floor((i - 1) / 2), // Crear una estructura jerárquica
+            children: []
+        }))
+    };
+
+    // Crear la estructura de hijos
+    treeData.nodes.forEach((node, index) => {
+        if (node.parent !== null) {
+            treeData.nodes[node.parent].children.push(node.id);
+        }
+    });
+
+    drawTree(treeData);
 }
 
 function drawTree(treeData) {
@@ -32,8 +59,7 @@ function drawTree(treeData) {
 
     const root = d3.stratify()
         .id(d => d.id)
-        .parentId(d => (d.id === 0 ? null : Math.floor((d.id - 1) / 2)))
-        (treeData.nodes);
+        .parentId(d => (d.parent === null ? null : d.parent))(treeData.nodes);
 
     const treeLayout = d3.tree().size([width - 100, height - 100]);
     treeLayout(root);
@@ -70,4 +96,88 @@ function drawTree(treeData) {
         .attr("text-anchor", "middle")
         .attr("font-size", "12px")
         .text(d => d.data.label);
+}
+
+function depthSearch() {
+    const goalNode = document.getElementById("goalNode").value;
+    if (!goalNode) {
+        alert("Por favor, ingresa un nodo meta para la búsqueda.");
+        return;
+    }
+
+    const visited = new Set();
+    const stack = [0]; // Empezamos desde el nodo raíz (índice 0)
+    let found = false;
+    let path = [];
+
+    while (stack.length > 0) {
+        const current = stack.pop();
+        if (visited.has(current)) continue;
+
+        visited.add(current);
+        path.push(treeData.nodes[current].label);
+
+        if (treeData.nodes[current].label === goalNode) {
+            found = true;
+            break;
+        }
+
+        // Agregar los hijos al stack
+        treeData.nodes[current].children.forEach(childId => stack.push(childId));
+    }
+
+    if (found) {
+        alert("Nodo encontrado: " + path.join(" -> "));
+        searchResult = { method: "Profundidad", path };
+    } else {
+        alert("Nodo no encontrado.");
+    }
+}
+
+function breadthSearch() {
+    const goalNode = document.getElementById("goalNode").value;
+    if (!goalNode) {
+        alert("Por favor, ingresa un nodo meta para la búsqueda.");
+        return;
+    }
+
+    const visited = new Set();
+    const queue = [0]; // Empezamos desde el nodo raíz (índice 0)
+    let found = false;
+    let path = [];
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (visited.has(current)) continue;
+
+        visited.add(current);
+        path.push(treeData.nodes[current].label);
+
+        if (treeData.nodes[current].label === goalNode) {
+            found = true;
+            break;
+        }
+
+        // Agregar los hijos al queue
+        treeData.nodes[current].children.forEach(childId => queue.push(childId));
+    }
+
+    if (found) {
+        alert("Nodo encontrado: " + path.join(" -> "));
+        searchResult = { method: "Amplitud", path };
+    } else {
+        alert("Nodo no encontrado.");
+    }
+}
+
+function showSummary() {
+    if (searchResult.path) {
+        const summary = `
+            Método de búsqueda: ${searchResult.method}<br>
+            Camino encontrado: ${searchResult.path.join(" -> ")}
+        `;
+        document.getElementById("info").innerHTML = summary;
+    } else {
+        alert("No se ha realizado ninguna búsqueda aún.");
+    }
 }
